@@ -20,31 +20,10 @@ if response.status_code != 200:
 soup = BeautifulSoup(response,"html.parser")
 
 tables = soup.find_all("table")
-
-#tesla_tables = 
-tables_with_date_header = []
-
-for table in tables:
-    # Find all th elements in the thead of the current table
-    if table.find('thead') is not None:
-        headers = table.find('thead').find_all('th')
-    print(headers)
-    
-    # Check if any header contains the text "Date"
-    if any(header.get_text(strip=True) == "Date" for header in headers):
-        tables_with_date_header.append(table)
-
-for table in tables:
-    if (header.get_text(strip = True) == "Date" for header in headers):
-        print(table)
-
-# Print or process the tables with the header "Date"
-#for table in tables_with_date_header:
-    #print(table.prettify())
-
-price = soup.find("td", class_="text-right")
-date = soup.find("td")
 tables_with_th = []
+tables_body = []
+
+tr = soup.find_all('tr')
 
 # Iterate through each table
 for table in tables:
@@ -52,18 +31,30 @@ for table in tables:
     if table.find_all('th'):
         tables_with_th.append(table)
 
-# Print or process the tables with <th> elements
+counter = 0
 for table in tables_with_th:
-    print(table.prettify())
-#gfg = soup.find_all(lambda tag: tag.name == "strong" and text in tag.text)
+    if table.find_all("td"):
+        tables_body.append(table.find_all("td"))
 
 tesla_revenue = pd.DataFrame(columns = ["Date", "Revenue"])
 
-for index, table in enumerate(tables):
-    if ("Date" in str(table)):
-        table_index = index
-        break
+for table in tables_body:
+    Date = ""
+    Revenue = ""
+    for i, value in enumerate(table):
+        if i == 0 or (i % 2 == 0):
+            Date = value.text
+        else:
+            Revenue = str(value.text).replace("\n", "").replace(" ", "")
+            tesla_revenue = pd.concat([tesla_revenue, pd.DataFrame({
+            "Date": Date,
+            "Revenue": Revenue
+        }, index = [0])], ignore_index = True)
+            Date = ""
+            Revenue = ""
+            
 
-#for
 
-print(table_index)
+
+print(tesla_revenue.head())
+
