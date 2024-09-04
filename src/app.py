@@ -36,7 +36,13 @@ for table in tables_with_th:
     if table.find_all("td"):
         tables_body.append(table.find_all("td"))
 
+print(tables_body)
+
+
 tesla_revenue = pd.DataFrame(columns = ["Date", "Revenue"])
+
+revenue_list = []
+date_list = []
 
 for table in tables_body:
     Date = ""
@@ -44,8 +50,10 @@ for table in tables_body:
     for i, value in enumerate(table):
         if i == 0 or (i % 2 == 0):
             Date = value.text
+            date_list.append(Date)
         else:
             Revenue = str(value.text).replace("\n", "").replace(" ", "")
+            revenue_list.append(float(Revenue[:-1]))
             tesla_revenue = pd.concat([tesla_revenue, pd.DataFrame({
             "Date": Date,
             "Revenue": Revenue
@@ -63,13 +71,29 @@ connection = sqlite3.connect("tesla.db")
 connection
 
 cursor = connection.cursor()
-cursor.execute("""CREATE TABLE revenue (Date, Revenue)""")
+cursor.execute("""CREATE TABLE IF NOT EXISTS revenue (Date, Revenue)""")
 
 tesla_tuples = list(tesla_revenue.to_records(index = False))
 tesla_tuples[:5]
 
-cursor.executemany("INSERT INTO revenue VALUES (?,?)", tesla_tuples)
-connection.commit()
+def is_database_empty():
+    # Query to count the number of tables
+    cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'")
+    table_count = cursor.fetchone()[0]
+    
+    return table_count == 0
+
+# Usage
+db_path = 'your_database.db'
+if is_database_empty():
+    print("The database is empty.")
+else:
+    cursor.executemany("INSERT INTO revenue VALUES (?,?)", tesla_tuples)
+    connection.commit()
+
+
 
 for row in cursor.execute("SELECT * FROM revenue"):
     print(row)
+
+print(tables_body)
