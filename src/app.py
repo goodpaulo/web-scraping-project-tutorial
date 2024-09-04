@@ -36,13 +36,11 @@ for table in tables_with_th:
     if table.find_all("td"):
         tables_body.append(table.find_all("td"))
 
-print(tables_body)
-
 
 tesla_revenue = pd.DataFrame(columns = ["Date", "Revenue"])
 
-revenue_list = []
-date_list = []
+#revenue_list = []
+#date_list = []
 
 for table in tables_body:
     Date = ""
@@ -50,19 +48,25 @@ for table in tables_body:
     for i, value in enumerate(table):
         if i == 0 or (i % 2 == 0):
             Date = value.text
-            date_list.append(Date)
+            #date_list.append(Date)
         else:
             Revenue = str(value.text).replace("\n", "").replace(" ", "")
-            revenue_list.append(float(Revenue[:-1]))
+            if(Revenue[-1] == "B"):
+                Revenue = (float(Revenue[:-1]) * 1000000000)
+            elif(Revenue[-1] == "M"):
+                Revenue = (float(Revenue[:-1]) * 1000000)
             tesla_revenue = pd.concat([tesla_revenue, pd.DataFrame({
             "Date": Date,
             "Revenue": Revenue
         }, index = [0])], ignore_index = True)
+            
+            #if(Revenue[-1] == "B"):
+                #revenue_list.append(float(Revenue[:-1]) * 1000000000)
+            #elif(Revenue[-1] == "M"):
+                #revenue_list.append(float(Revenue[:-1]) * 1000000)
             Date = ""
             Revenue = ""
             
-
-
 
 print(tesla_revenue.head())
 
@@ -74,7 +78,6 @@ cursor = connection.cursor()
 cursor.execute("""CREATE TABLE IF NOT EXISTS revenue (Date, Revenue)""")
 
 tesla_tuples = list(tesla_revenue.to_records(index = False))
-tesla_tuples[:5]
 
 def is_database_empty():
     # Query to count the number of tables
@@ -83,17 +86,25 @@ def is_database_empty():
     
     return table_count == 0
 
-# Usage
-db_path = 'your_database.db'
 if is_database_empty():
-    print("The database is empty.")
-else:
     cursor.executemany("INSERT INTO revenue VALUES (?,?)", tesla_tuples)
     connection.commit()
+else:
+    print("database already has data")
+    
 
+#print(revenue_list)
 
+#for row in cursor.execute("SELECT * FROM revenue"):
+    #print(row)
 
-for row in cursor.execute("SELECT * FROM revenue"):
-    print(row)
+fig, axis = plt.subplots(figsize = (10, 5))
 
-print(tables_body)
+#tesla_revenue["Date"] = pd.to_datetime(tesla_revenue["Date"], format="%B, "%D", %Y")
+
+tesla_revenue["Revenue"] = tesla_revenue["Revenue"].astype('int')
+sns.lineplot(data = tesla_revenue, x = "Date", y = "Revenue")
+
+plt.tight_layout()
+
+plt.show()
