@@ -6,6 +6,7 @@ import sqlite3
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+import datetime
 
 url = "https://ycharts.com/companies/TSLA/revenues"
 
@@ -38,9 +39,6 @@ for table in tables_with_th:
 
 
 tesla_revenue = pd.DataFrame(columns = ["Date", "Revenue"])
-
-#revenue_list = []
-#date_list = []
 
 for table in tables_body:
     Date = ""
@@ -91,20 +89,29 @@ if is_database_empty():
     connection.commit()
 else:
     print("database already has data")
-    
 
-#print(revenue_list)
 
-#for row in cursor.execute("SELECT * FROM revenue"):
-    #print(row)
 
-fig, axis = plt.subplots(figsize = (10, 5))
+for i in range(len(tesla_revenue)):
+    tesla_revenue.at[i, 'Date'] = str(datetime.datetime.strptime(tesla_revenue.at[i, "Date"], "%B %d, %Y").date())
 
-#tesla_revenue["Date"] = pd.to_datetime(tesla_revenue["Date"], format="%B, "%D", %Y")
 
+#print(tesla_revenue.head())
+
+
+tesla_revenue["Date"] = pd.to_datetime(tesla_revenue["Date"])
 tesla_revenue["Revenue"] = tesla_revenue["Revenue"].astype('int')
-sns.lineplot(data = tesla_revenue, x = "Date", y = "Revenue")
+
+#print(tesla_revenue)
+plt.figure(figsize=(20, 6))
+plt.plot(tesla_revenue['Date'], tesla_revenue['Revenue'], marker='o', linestyle='-', color='b')
+
+#sns.lineplot(data = tesla_revenue, x = "Date", y = "Revenue")
+
+#plt.figure(figsize=(10, 6))
+#plt.plot(tesla_revenue['Date'], tesla_revenue['Revenue'], marker='o', linestyle='-', color='b')
 
 plt.tight_layout()
 
 plt.show()
+print("test")
